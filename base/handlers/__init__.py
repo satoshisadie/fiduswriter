@@ -31,6 +31,14 @@ class HelloHandler(RequestHandler):
     def get(self):
         self.write('Hello from tornado')
 
+class RobotsHandler(RequestHandler):
+
+    def head(self):
+        self.finish()
+
+    def get(self):
+        self.write('User-agent: *\nDisallow: /document/\nDisallow: /bibliography/\nDisallow: /usermedia/\nDisallow: /book/')
+
 
 class DjangoStaticFilesHandler(StaticFileHandler):
 
