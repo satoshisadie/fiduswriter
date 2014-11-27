@@ -18,13 +18,13 @@ from django.core.handlers.wsgi import WSGIRequest
 import tornadoredis
 
 # TODO: Redis connection pools. When/how should they be used? Currently we don't use them at all.
-# Also, the subscription list of every pubsub channel is kept in regular redis. 
+# Also, the subscription list of every pubsub channel is kept in regular redis.
 # When using Redis 2.8, it is reset when "pubsub numsub channelname" returns zero.
 try:
     redis_password = settings.CACHES['default']['OPTIONS']['PASSWORD']
 except KeyError:
     redis_password = None
-    
+
 redis_server_info = settings.CACHES["default"]["LOCATION"].split(':')
 if redis_server_info[0] == 'unix':
     redis_client_publisher = tornadoredis.Client(unix_socket_path=redis_server_info[1],password=redis_password)
@@ -43,20 +43,24 @@ class BaseRedisWebSocketHandler(WebSocketHandler):
         super(BaseRedisWebSocketHandler, self).__init__(*args, **kwargs)
         self.channel = 'channel'
 
+    def check_origin(self, origin):
+        return True
+        # TODO: We probably only should allow conenctions from the same server but possibly a different port.
+
     @tornado.gen.engine
     def listen_to_redis(self):
         self.redis_client = tornadoredis.Client()
         self.redis_client.connect()
         yield tornado.gen.Task(self.redis_client.subscribe, self.channel)
         self.redis_client.listen(self.process_redis_message)
-        
+
     def process_redis_message(self, message):
         if message.kind == 'message':
             self.write_message(message.body)
-        
+
     def process_message(self, message):
         pass
-    
+
     def get_storage_object(self, variable):
         value = redis_client_storage.get(variable)
         if value:
@@ -155,4 +159,4 @@ class BaseRedisWebSocketHandler(WebSocketHandler):
         return request
 
     def send_updates(self, update):
-        redis_client_publisher.publish(self.channel, json.dumps(update))    
+        redis_client_publisher.publish(self.channel, json.dumps(update))

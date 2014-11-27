@@ -10,6 +10,10 @@ from django.core.handlers.wsgi import WSGIRequest
 
 class BaseWebSocketHandler(WebSocketHandler):
 
+    def check_origin(self, origin):
+        return True
+        # TODO: We probably only should allow conenctions from the same server but possibly a different port.
+
     def allow_draft76(self):
         # for iOS 5.0 Safari
         return True
